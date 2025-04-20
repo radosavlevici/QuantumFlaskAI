@@ -11,7 +11,7 @@ build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 
 [workflows]
-runButton = "Start Dev Server"
+runButton = "Start Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -45,3 +45,12 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Start Server"
+author = 40193100
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/index.js"
