@@ -11,7 +11,7 @@ build = ["npm", "run", "build"]
 run = ["sh", "-c", "node dist/index.js"]
 
 [workflows]
-runButton = "Flask Server"
+runButton = "Node Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -76,6 +76,15 @@ args = "pip install flask"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python app.py"
+
+[[workflows.workflow]]
+name = "Node Server"
+author = 40193100
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install && node server/index.js"
 
 [[ports]]
 localPort = 5000
