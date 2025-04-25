@@ -11,7 +11,7 @@ build = ["npm", "run", "build"]
 run = ["sh", "-c", "node dist/index.js"]
 
 [workflows]
-runButton = "Dev Server"
+runButton = "Fix and Start Dev"
 
 [[workflows.workflow]]
 name = "Project"
@@ -94,6 +94,19 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm install && npm run dev"
+
+[[workflows.workflow]]
+name = "Fix and Start Dev"
+author = 40193100
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
 
 [[ports]]
 localPort = 5000
