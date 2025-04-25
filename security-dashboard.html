@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Dashboard</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f7fa;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    h1 {
+      margin: 0;
+      background: linear-gradient(90deg, #4a56e2, #8a4be2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: transparent;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .card {
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      margin-top: 0;
+      font-size: 1.25rem;
+      color: #333;
+    }
+    .stat {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin: 16px 0;
+      background: linear-gradient(90deg, #4a56e2, #8a4be2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: transparent;
+    }
+    .alert {
+      background-color: #ffecec;
+      border-left: 4px solid #f44336;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(244, 67, 54, 0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+    }
+    th, td {
+      padding: 16px;
+      text-align: left;
+    }
+    th {
+      background-color: #f0f2f5;
+      font-weight: 600;
+      color: #555;
+    }
+    tr:nth-child(even) {
+      background-color: #f9fafc;
+    }
+    tr:hover {
+      background-color: #f0f4ff;
+    }
+    .nav {
+      background-color: #fff;
+      padding: 16px 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .nav a {
+      text-decoration: none;
+      color: #4a56e2;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 6px;
+      transition: background-color 0.2s;
+    }
+    .nav a:hover, .nav a.active {
+      background-color: #f0f4ff;
+    }
+    .nav a.active {
+      background-color: #eaefff;
+      color: #3a46c2;
+    }
+    .btn {
+      display: inline-block;
+      padding: 8px 16px;
+      background: linear-gradient(90deg, #4a56e2, #8a4be2);
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(74, 86, 226, 0.3);
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-warning {
+      background-color: #fff3e0;
+      color: #ff9800;
+    }
+    .badge-info {
+      background-color: #e3f2fd;
+      color: #2196f3;
+    }
+    #api-test {
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+    }
+    #api-result {
+      background-color: #f0f2f5;
+      border-radius: 6px;
+      padding: 16px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+    .password-item {
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .password-item h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+    .password-item .meta {
+      display: flex;
+      justify-content: space-between;
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+    .password-strength {
+      display: flex;
+      margin: 16px 0;
+      align-items: center;
+    }
+    .strength-bar {
+      height: 8px;
+      width: 100%;
+      background-color: #eee;
+      border-radius: 4px;
+      margin-right: 16px;
+      overflow: hidden;
+    }
+    .strength-fill {
+      height: 100%;
+      border-radius: 4px;
+    }
+    .strength-fill.weak {
+      width: 30%;
+      background-color: #f44336;
+    }
+    .strength-fill.medium {
+      width: 70%;
+      background-color: #ff9800;
+    }
+    .strength-fill.strong {
+      width: 100%;
+      background-color: #4caf50;
+    }
+    .password-masked {
+      font-family: monospace;
+      letter-spacing: 2px;
+    }
+    .session-control {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+    }
+    .form-row {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+      color: #666;
+    }
+    .recommendation {
+      background-color: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      border-radius: 6px;
+    }
+    .recommendation h3 {
+      margin-top: 0;
+      color: #0d47a1;
+    }
+    .recommendation.implemented {
+      background-color: #e8f5e9;
+      border-left-color: #4caf50;
+    }
+    .recommendation.implemented h3 {
+      color: #1b5e20;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Security Dashboard</h1>
+    <div>
+      <span>Welcome, Demo User</span>
+    </div>
+  </header>
+  
+  <div class="nav">
+    <a href="#" class="active" data-page="dashboard">Dashboard</a>
+    <a href="#" data-page="security-status">Security Status</a>
+    <a href="#" data-page="activity-log">Activity Log</a>
+    <a href="#" data-page="password-manager">Password Manager</a>
+    <a href="#" data-page="sessions">Sessions</a>
+    <a href="#" data-page="settings">Settings</a>
+  </div>
+  
+  <div id="api-test">
+    <h2>API Test</h2>
+    <p>Test the API endpoints to ensure the server is working correctly.</p>
+    <div>
+      <button onclick="testApi('/api/user')" class="btn">Test User API</button>
+      <button onclick="testApi('/api/dashboard/summary')" class="btn">Test Dashboard Summary</button>
+      <button onclick="testApi('/api/security-events')" class="btn">Test Security Events</button>
+      <button onclick="testApi('/api/security-alerts')" class="btn">Test Security Alerts</button>
+      <button onclick="testApi('/api/sessions')" class="btn">Test Sessions</button>
+      <button onclick="testApi('/api/passwords')" class="btn">Test Passwords</button>
+      <button onclick="testApi('/api/recommendations')" class="btn">Test Recommendations</button>
+    </div>
+    <div id="api-result" style="margin-top: 20px;">Click a button above to test an API endpoint.</div>
+  </div>
+  
+  <!-- DASHBOARD PAGE -->
+  <div id="dashboard-page" class="page active">
+    <div class="alert">
+      <strong>⚠️ Security Alert:</strong> Unusual login detected from Moscow, Russia. <a href="#" data-action="view-alert" class="btn">Review activity</a>
+    </div>
+    
+    <div class="cards">
+      <div class="card">
+        <h2>Security Score</h2>
+        <div class="stat">75%</div>
+        <p>Your account security needs improvement</p>
+        <a href="#" data-page="security-status" class="btn">View recommendations</a>
+      </div>
+      
+      <div class="card">
+        <h2>Active Sessions</h2>
+        <div class="stat">3</div>
+        <p>Devices currently logged in</p>
+        <a href="#" data-page="sessions" class="btn">Manage sessions</a>
+      </div>
+      
+      <div class="card">
+        <h2>Weak Passwords</h2>
+        <div class="stat">2</div>
+        <p>Passwords that need strengthening</p>
+        <a href="#" data-page="password-manager" class="btn">Update passwords</a>
+      </div>
+      
+      <div class="card">
+        <h2>Pending Recommendations</h2>
+        <div class="stat">4</div>
+        <p>Security improvements to make</p>
+        <a href="#" data-page="security-status" class="btn">View recommendations</a>
+      </div>
+    </div>
+    
+    <h2>Recent Activity</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Location</th>
+          <th>Device</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-info">Login</span> Successful login</td>
+          <td>San Francisco, CA</td>
+          <td>Chrome on macOS</td>
+          <td>Just now</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-info">Change</span> Password changed</td>
+          <td>San Francisco, CA</td>
+          <td>Chrome on macOS</td>
+          <td>Yesterday</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-warning">Alert</span> Failed login attempt</td>
+          <td>Unknown</td>
+          <td>Unknown</td>
+          <td>2 days ago</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- SECURITY STATUS PAGE -->
+  <div id="security-status-page" class="page">
+    <h2>Security Status</h2>
+    <p>Your account security score is <strong>75%</strong>. Here are recommendations to improve:</p>
+    
+    <div class="recommendation">
+      <h3>Enable Two-Factor Authentication</h3>
+      <p>Add an extra layer of security by requiring a second verification step when logging in.</p>
+      <button class="btn">Enable 2FA</button>
+    </div>
+    
+    <div class="recommendation">
+      <h3>Update Weak Passwords</h3>
+      <p>You have 2 passwords that are considered weak or have been reused across multiple sites.</p>
+      <a href="#" data-page="password-manager" class="btn">Update Passwords</a>
+    </div>
+    
+    <div class="recommendation implemented">
+      <h3>Review Recent Activity ✓</h3>
+      <p>You've recently checked your account activity. Keep monitoring for any suspicious logins.</p>
+    </div>
+    
+    <div class="recommendation">
+      <h3>Remove Unused Applications</h3>
+      <p>You have 3 applications that haven't been used in over 6 months but still have access to your account.</p>
+      <button class="btn">Review Applications</button>
+    </div>
+  </div>
+  
+  <!-- ACTIVITY LOG PAGE -->
+  <div id="activity-log-page" class="page">
+    <h2>Activity Log</h2>
+    <p>Review all activity on your account for the last 30 days.</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Location</th>
+          <th>Device</th>
+          <th>IP Address</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-info">Login</span> Successful login</td>
+          <td>San Francisco, CA</td>
+          <td>Chrome on macOS</td>
+          <td>192.168.1.1</td>
+          <td>Just now</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-info">Change</span> Password changed</td>
+          <td>San Francisco, CA</td>
+          <td>Chrome on macOS</td>
+          <td>192.168.1.1</td>
+          <td>Yesterday</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-warning">Alert</span> Failed login attempt</td>
+          <td>Moscow, Russia</td>
+          <td>Unknown</td>
+          <td>45.123.45.67</td>
+          <td>2 days ago</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-info">Login</span> Successful login</td>
+          <td>San Francisco, CA</td>
+          <td>Firefox on Windows</td>
+          <td>192.168.1.5</td>
+          <td>3 days ago</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-info">Login</span> Successful login</td>
+          <td>New York, NY</td>
+          <td>Safari on iOS</td>
+          <td>172.16.254.1</td>
+          <td>5 days ago</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-info">Change</span> Email updated</td>
+          <td>San Francisco, CA</td>
+          <td>Chrome on macOS</td>
+          <td>192.168.1.1</td>
+          <td>1 week ago</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- PASSWORD MANAGER PAGE -->
+  <div id="password-manager-page" class="page">
+    <h2>Password Manager</h2>
+    <p>Securely store and manage your passwords for various services.</p>
+    
+    <div class="password-item">
+      <h3>Gmail</h3>
+      <div class="meta">
+        <span>username@gmail.com</span>
+        <span>Last updated: 2 months ago</span>
+      </div>
+      <div class="password-masked">••••••••••••</div>
+      <div class="password-strength">
+        <div class="strength-bar">
+          <div class="strength-fill weak"></div>
+        </div>
+        <span>Weak</span>
+      </div>
+      <button class="btn">Update Password</button>
+    </div>
+    
+    <div class="password-item">
+      <h3>Facebook</h3>
+      <div class="meta">
+        <span>username@gmail.com</span>
+        <span>Last updated: 1 year ago</span>
+      </div>
+      <div class="password-masked">••••••••••••••</div>
+      <div class="password-strength">
+        <div class="strength-bar">
+          <div class="strength-fill weak"></div>
+        </div>
+        <span>Weak</span>
+      </div>
+      <button class="btn">Update Password</button>
+    </div>
+    
+    <div class="password-item">
+      <h3>Amazon</h3>
+      <div class="meta">
+        <span>username@gmail.com</span>
+        <span>Last updated: 2 weeks ago</span>
+      </div>
+      <div class="password-masked">••••••••••••••••</div>
+      <div class="password-strength">
+        <div class="strength-bar">
+          <div class="strength-fill medium"></div>
+        </div>
+        <span>Medium</span>
+      </div>
+      <button class="btn">Update Password</button>
+    </div>
+    
+    <div class="password-item">
+      <h3>Bank Account</h3>
+      <div class="meta">
+        <span>username</span>
+        <span>Last updated: 1 week ago</span>
+      </div>
+      <div class="password-masked">••••••••••••••••••••</div>
+      <div class="password-strength">
+        <div class="strength-bar">
+          <div class="strength-fill strong"></div>
+        </div>
+        <span>Strong</span>
+      </div>
+      <button class="btn">Update Password</button>
+    </div>
+    
+    <div style="margin-top: 20px;">
+      <button class="btn">Add New Password</button>
+    </div>
+  </div>
+  
+  <!-- SESSIONS PAGE -->
+  <div id="sessions-page" class="page">
+    <h2>Active Sessions</h2>
+    <p>Manage devices currently logged into your account.</p>
+    
+    <div class="password-item">
+      <h3>Current Device</h3>
+      <div class="meta">
+        <span>Chrome on macOS</span>
+        <span>San Francisco, CA</span>
+      </div>
+      <p>IP Address: 192.168.1.1</p>
+      <p>Last active: Just now</p>
+      <div class="session-control">
+        <button class="btn" disabled>Current Session</button>
+      </div>
+    </div>
+    
+    <div class="password-item">
+      <h3>iPhone 13</h3>
+      <div class="meta">
+        <span>Safari on iOS</span>
+        <span>New York, NY</span>
+      </div>
+      <p>IP Address: 172.16.254.1</p>
+      <p>Last active: 2 days ago</p>
+      <div class="session-control">
+        <button class="btn">Terminate Session</button>
+      </div>
+    </div>
+    
+    <div class="password-item">
+      <h3>Work Laptop</h3>
+      <div class="meta">
+        <span>Firefox on Windows</span>
+        <span>San Francisco, CA</span>
+      </div>
+      <p>IP Address: 192.168.1.5</p>
+      <p>Last active: 5 days ago</p>
+      <div class="session-control">
+        <button class="btn">Terminate Session</button>
+      </div>
+    </div>
+    
+    <div style="margin-top: 20px;">
+      <button class="btn">Terminate All Other Sessions</button>
+    </div>
+  </div>
+  
+  <!-- SETTINGS PAGE -->
+  <div id="settings-page" class="page">
+    <h2>Account Settings</h2>
+    
+    <div class="card" style="margin-bottom: 24px;">
+      <h3>Profile Information</h3>
+      <div class="form-row">
+        <label for="firstname">First Name</label>
+        <input type="text" id="firstname" value="Demo">
+      </div>
+      <div class="form-row">
+        <label for="lastname">Last Name</label>
+        <input type="text" id="lastname" value="User">
+      </div>
+      <div class="form-row">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" value="demo@example.com">
+      </div>
+      <button class="btn">Update Profile</button>
+    </div>
+    
+    <div class="card" style="margin-bottom: 24px;">
+      <h3>Security Settings</h3>
+      <div class="form-row">
+        <label for="current-password">Current Password</label>
+        <input type="password" id="current-password">
+      </div>
+      <div class="form-row">
+        <label for="new-password">New Password</label>
+        <input type="password" id="new-password">
+      </div>
+      <div class="form-row">
+        <label for="confirm-password">Confirm New Password</label>
+        <input type="password" id="confirm-password">
+      </div>
+      <button class="btn">Change Password</button>
+    </div>
+    
+    <div class="card">
+      <h3>Two-Factor Authentication</h3>
+      <p>Enhance your account security by enabling two-factor authentication.</p>
+      <button class="btn">Enable 2FA</button>
+    </div>
+  </div>
+  
+  <footer class="footer">
+    <p>Security Dashboard &copy; 2025. All rights reserved.</p>
+  </footer>
+  
+  <script>
+    // Navigation 
+    document.addEventListener('DOMContentLoaded', function() {
+      // Page navigation
+      const navLinks = document.querySelectorAll('.nav a');
+      const pages = document.querySelectorAll('.page');
+      
+      function navigateTo(pageId) {
+        // Hide all pages
+        pages.forEach(page => page.classList.remove('active'));
+        
+        // Show selected page
+        document.getElementById(pageId + '-page').classList.add('active');
+        
+        // Update active nav link
+        navLinks.forEach(link => {
+          if (link.dataset.page === pageId) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      }
+      
+      // Set up navigation event listeners
+      navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          navigateTo(this.dataset.page);
+        });
+      });
+      
+      // Set up page buttons (links between pages)
+      const pageButtons = document.querySelectorAll('[data-page]');
+      pageButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+          if (this.classList.contains('nav')) return; // Skip nav items (already handled)
+          e.preventDefault();
+          navigateTo(this.dataset.page);
+        });
+      });
+      
+      // Special action handlers
+      const actionButtons = document.querySelectorAll('[data-action]');
+      actionButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          const action = this.dataset.action;
+          
+          if (action === 'view-alert') {
+            navigateTo('activity-log');
+          }
+        });
+      });
+    });
+    
+    // Function to test API endpoints
+    async function testApi(endpoint) {
+      const resultElement = document.getElementById('api-result');
+      resultElement.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+          throw new Error(`API returned status: ${response.status}`);
+        }
+        const data = await response.json();
+        resultElement.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        resultElement.textContent = `Error: ${error.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
