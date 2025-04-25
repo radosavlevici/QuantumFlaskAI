@@ -1,6 +1,6 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import http from 'http';
+import { readFileSync } from 'fs';
+import path from 'path';
 
 // Simple HTTP server
 const server = http.createServer((req, res) => {
