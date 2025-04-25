@@ -11,7 +11,7 @@ build = ["npm", "run", "build"]
 run = ["sh", "-c", "node dist/index.js"]
 
 [workflows]
-runButton = "Fix and Start Dev"
+runButton = "Fixed Dev Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -103,6 +103,19 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Fixed Dev Server"
+author = 40193100
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install --legacy-peer-deps"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
