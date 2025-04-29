@@ -3,7 +3,7 @@ console.log('Starting the Security Dashboard Server...');
 console.log('Press Ctrl+C to stop the server.\n');
 
 // Import the child_process module to spawn a child process
-import { spawn } from 'child_process';
+const { spawn } = require('child_process');
 
 // Run the server in a child process but connect to the parent's standard I/O
 const server = spawn('node', ['simple-server.cjs'], {
