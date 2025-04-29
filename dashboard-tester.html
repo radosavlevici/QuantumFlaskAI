@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Dashboard Tester</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #f7f9fc;
+      color: #333;
+    }
+    h1 {
+      margin-top: 0;
+      color: #4a56e2;
+      text-align: center;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+      color: #333;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin: 15px 0;
+    }
+    button {
+      background-color: #4a56e2;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #3a46c2;
+    }
+    pre {
+      background-color: #f0f2f5;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+    .response {
+      display: none;
+      margin-top: 20px;
+    }
+    .alert {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 10px 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 10px 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    a.button {
+      display: inline-block;
+      background-color: #4a56e2;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      margin-top: 10px;
+      text-align: center;
+    }
+    a.button:hover {
+      background-color: #3a46c2;
+    }
+    .dashboard-link {
+      text-align: center;
+      margin: 30px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Security Dashboard Tester</h1>
+  
+  <div class="dashboard-link">
+    <a href="http://localhost:5000/" class="button" target="_blank">Open Full Dashboard</a>
+  </div>
+  
+  <div class="card">
+    <h2>API Endpoints Test</h2>
+    <p>Test individual API endpoints to verify they're working correctly:</p>
+    
+    <div class="buttons">
+      <button onclick="testEndpoint('/api/user')">User Data</button>
+      <button onclick="testEndpoint('/api/dashboard/summary')">Dashboard Summary</button>
+      <button onclick="testEndpoint('/api/security-events')">Security Events</button>
+      <button onclick="testEndpoint('/api/security-alerts')">Security Alerts</button>
+      <button onclick="testEndpoint('/api/sessions')">Active Sessions</button>
+      <button onclick="testEndpoint('/api/passwords')">Stored Passwords</button>
+      <button onclick="testEndpoint('/api/recommendations')">Recommendations</button>
+    </div>
+    
+    <div id="response" class="response">
+      <h3>API Response</h3>
+      <pre id="result">Click a button above to test an endpoint.</pre>
+    </div>
+  </div>
+  
+  <div class="card">
+    <h2>Server Status</h2>
+    <p id="statusMessage">Click the button below to check server status</p>
+    <button onclick="checkServerStatus()">Check Server Status</button>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000';
+    
+    async function testEndpoint(endpoint) {
+      const resultElem = document.getElementById('result');
+      const responseElem = document.getElementById('response');
+      
+      responseElem.style.display = 'block';
+      resultElem.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch(`${API_BASE}${endpoint}`);
+        const data = await response.json();
+        resultElem.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        resultElem.textContent = `Error: ${error.message}`;
+      }
+    }
+    
+    async function checkServerStatus() {
+      const statusElem = document.getElementById('statusMessage');
+      
+      try {
+        const startTime = new Date().getTime();
+        const response = await fetch(`${API_BASE}/api/user`);
+        const endTime = new Date().getTime();
+        const responseTime = endTime - startTime;
+        
+        if (response.ok) {
+          statusElem.innerHTML = `<div class="success">✅ Server is running! Response time: ${responseTime}ms</div>`;
+        } else {
+          statusElem.innerHTML = `<div class="alert">⚠️ Server returned status: ${response.status}</div>`;
+        }
+      } catch (error) {
+        statusElem.innerHTML = `<div class="alert">❌ Server is not responding: ${error.message}</div>`;
+      }
+    }
+    
+    // Initial server check on page load
+    window.addEventListener('load', () => {
+      setTimeout(checkServerStatus, 1000);
+    });
+  </script>
+</body>
+</html>
