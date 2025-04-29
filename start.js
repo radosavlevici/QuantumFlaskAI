@@ -1,94 +1,98 @@
-// Simple server runner
-import fs from 'fs';
-import http from 'http';
-import path from 'path';
-import { fileURLToPath } from 'url';
+/**
+ * start.js - Main startup script for the Security Dashboard
+ * 
+ * This script automatically starts the simple security dashboard server
+ * in the background and provides instructions for accessing it.
+ */
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PUBLIC_DIR = path.join(__dirname, 'public');
+// Import required modules
+const { spawn } = require('child_process');
+const fs = require('fs');
+const http = require('http');
 
-// MIME types for common file extensions
-const MIME_TYPES = {
-  '.html': 'text/html',
-  '.css': 'text/css',
-  '.js': 'text/javascript',
-  '.json': 'application/json',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-};
+console.log('🚀 Starting Security Dashboard Application...');
 
-// Log helper
-function log(message) {
-  const time = new Date().toLocaleTimeString();
-  console.log(`${time} [server] ${message}`);
-}
-
-// Serve files from the public directory
-async function serveFile(req, res) {
-  try {
-    // Get the file path
-    let filePath = req.url === '/' ? '/index.html' : req.url;
-    filePath = path.join(PUBLIC_DIR, filePath);
+// Function to check if a port is in use
+function isPortInUse(port) {
+  return new Promise((resolve) => {
+    const server = http.createServer();
     
-    // Get the file extension
-    const extname = path.extname(filePath).toLowerCase();
-    const contentType = MIME_TYPES[extname] || 'application/octet-stream';
-    
-    // Read the file
-    const data = await fs.promises.readFile(filePath);
-    
-    // Set the content type and send the file
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(data);
-    
-    log(`Served ${req.url} (${contentType})`);
-  } catch (err) {
-    // If the file doesn't exist, try serving index.html (SPA fallback)
-    if (err.code === 'ENOENT' && req.url !== '/index.html') {
-      try {
-        const indexPath = path.join(PUBLIC_DIR, 'index.html');
-        const data = await fs.promises.readFile(indexPath);
-        
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end(data);
-        
-        log(`Served index.html as fallback for ${req.url}`);
-      } catch (indexErr) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Not Found');
-        log(`404: ${req.url}`);
+    server.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        resolve(true);
+      } else {
+        resolve(false);
       }
-    } else {
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end('Internal Server Error');
-      console.error(err);
-      log(`500: ${req.url}`);
-    }
-  }
+    });
+    
+    server.once('listening', () => {
+      server.close();
+      resolve(false);
+    });
+    
+    server.listen(port);
+  });
 }
 
-// Create the server
-const server = http.createServer(async (req, res) => {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+// Function to log a message with timestamp
+function log(message) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ${message}`;
+  console.log(logMessage);
   
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
+  // Append to server log file
+  fs.appendFileSync('server.log', logMessage + '\n');
+}
+
+// Function to start the server
+async function startServer() {
+  // Check if port 8000 is already in use
+  const portInUse = await isPortInUse(8000);
+  
+  if (portInUse) {
+    log('Port 8000 is already in use. Assuming server is already running.');
+    displayServerInfo();
     return;
   }
   
-  // Serve files
-  await serveFile(req, res);
-});
+  // Store the server PID so we can terminate it later if needed
+  const serverProcess = spawn('node', ['simple-server.cjs'], {
+    detached: true,
+    stdio: 'ignore'
+  });
+  
+  // Write PID to file
+  fs.writeFileSync('server.pid', serverProcess.pid.toString());
+  
+  // Allow the parent process to exit independently
+  serverProcess.unref();
+  
+  log(`Server started with PID: ${serverProcess.pid}`);
+  displayServerInfo();
+}
+
+// Function to display server information
+function displayServerInfo() {
+  log(`
+=================================================================
+🔐 SECURITY DASHBOARD IS RUNNING 🔐
+=================================================================
+• Dashboard URL: http://localhost:8000/
+• API Documentation: http://localhost:8000/api/
+
+Available API Endpoints:
+• GET /api/user - User profile data
+• GET /api/dashboard/summary - Security overview metrics
+• GET /api/security-events - Recent security events
+• GET /api/security-alerts - Active security alerts
+• GET /api/sessions - Active login sessions
+• GET /api/passwords - Stored passwords
+• GET /api/recommendations - Security recommendations
+=================================================================
+`);
+}
 
 // Start the server
-const PORT = 5000;
-server.listen(PORT, '0.0.0.0', () => {
-  log(`🚀 Server running at http://0.0.0.0:${PORT}/`);
+startServer().catch(err => {
+  log(`Error starting server: ${err.message}`);
 });
