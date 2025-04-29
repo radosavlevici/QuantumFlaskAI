@@ -519,4 +519,283 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { db } from "./db";
+import { eq, desc, and, ne, count } from "drizzle-orm";
+import * as schema from "@shared/schema";
+
+export class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(schema.users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(schema.users)
+      .set(updates)
+      .where(eq(schema.users.id, id))
+      .returning();
+    return updatedUser || undefined;
+  }
+
+  // Security Events methods
+  async getSecurityEvents(userId: number, limit?: number): Promise<SecurityEvent[]> {
+    let query = db
+      .select()
+      .from(schema.securityEvents)
+      .where(eq(schema.securityEvents.userId, userId))
+      .orderBy(desc(schema.securityEvents.timestamp));
+    
+    if (limit) {
+      query = query.limit(limit);
+    }
+    
+    return await query;
+  }
+
+  async createSecurityEvent(event: InsertSecurityEvent): Promise<SecurityEvent> {
+    const [securityEvent] = await db
+      .insert(schema.securityEvents)
+      .values(event)
+      .returning();
+    return securityEvent;
+  }
+
+  // Security Alerts methods
+  async getSecurityAlerts(userId: number): Promise<SecurityAlert[]> {
+    return await db
+      .select()
+      .from(schema.securityAlerts)
+      .where(eq(schema.securityAlerts.userId, userId))
+      .orderBy(desc(schema.securityAlerts.timestamp));
+  }
+
+  async createSecurityAlert(alert: InsertSecurityAlert): Promise<SecurityAlert> {
+    const [securityAlert] = await db
+      .insert(schema.securityAlerts)
+      .values(alert)
+      .returning();
+    return securityAlert;
+  }
+
+  async updateSecurityAlert(id: number, updates: Partial<SecurityAlert>): Promise<SecurityAlert | undefined> {
+    const [updatedAlert] = await db
+      .update(schema.securityAlerts)
+      .set(updates)
+      .where(eq(schema.securityAlerts.id, id))
+      .returning();
+    return updatedAlert || undefined;
+  }
+
+  async dismissSecurityAlert(id: number): Promise<boolean> {
+    const result = await db
+      .update(schema.securityAlerts)
+      .set({ isRead: true })
+      .where(eq(schema.securityAlerts.id, id))
+      .returning({ id: schema.securityAlerts.id });
+    return result.length > 0;
+  }
+
+  // Sessions methods
+  async getSessions(userId: number): Promise<Session[]> {
+    return await db
+      .select()
+      .from(schema.sessions)
+      .where(and(
+        eq(schema.sessions.userId, userId),
+        eq(schema.sessions.isActive, true)
+      ))
+      .orderBy(desc(schema.sessions.lastActiveAt));
+  }
+
+  async getSession(id: number): Promise<Session | undefined> {
+    const [session] = await db
+      .select()
+      .from(schema.sessions)
+      .where(eq(schema.sessions.id, id));
+    return session || undefined;
+  }
+
+  async createSession(session: InsertSession): Promise<Session> {
+    const [newSession] = await db
+      .insert(schema.sessions)
+      .values(session)
+      .returning();
+    return newSession;
+  }
+
+  async updateSession(id: number, updates: Partial<Session>): Promise<Session | undefined> {
+    const [updatedSession] = await db
+      .update(schema.sessions)
+      .set(updates)
+      .where(eq(schema.sessions.id, id))
+      .returning();
+    return updatedSession || undefined;
+  }
+
+  async terminateSession(id: number): Promise<boolean> {
+    const result = await db
+      .update(schema.sessions)
+      .set({ isActive: false })
+      .where(eq(schema.sessions.id, id))
+      .returning({ id: schema.sessions.id });
+    return result.length > 0;
+  }
+
+  async terminateAllSessions(userId: number, exceptSessionId?: number): Promise<boolean> {
+    const conditions = [
+      eq(schema.sessions.userId, userId),
+      eq(schema.sessions.isActive, true)
+    ];
+    
+    if (exceptSessionId !== undefined) {
+      conditions.push(ne(schema.sessions.id, exceptSessionId));
+    }
+    
+    const result = await db
+      .update(schema.sessions)
+      .set({ isActive: false })
+      .where(and(...conditions))
+      .returning({ id: schema.sessions.id });
+    
+    return true;
+  }
+
+  // Stored Passwords methods
+  async getStoredPasswords(userId: number): Promise<StoredPassword[]> {
+    return await db
+      .select()
+      .from(schema.storedPasswords)
+      .where(eq(schema.storedPasswords.userId, userId))
+      .orderBy(schema.storedPasswords.website);
+  }
+
+  async getStoredPassword(id: number): Promise<StoredPassword | undefined> {
+    const [password] = await db
+      .select()
+      .from(schema.storedPasswords)
+      .where(eq(schema.storedPasswords.id, id));
+    return password || undefined;
+  }
+
+  async createStoredPassword(password: InsertStoredPassword): Promise<StoredPassword> {
+    const [storedPassword] = await db
+      .insert(schema.storedPasswords)
+      .values(password)
+      .returning();
+    return storedPassword;
+  }
+
+  async updateStoredPassword(id: number, updates: Partial<StoredPassword>): Promise<StoredPassword | undefined> {
+    const [updatedPassword] = await db
+      .update(schema.storedPasswords)
+      .set({
+        ...updates,
+        lastUpdated: new Date()
+      })
+      .where(eq(schema.storedPasswords.id, id))
+      .returning();
+    return updatedPassword || undefined;
+  }
+
+  async deleteStoredPassword(id: number): Promise<boolean> {
+    const result = await db
+      .delete(schema.storedPasswords)
+      .where(eq(schema.storedPasswords.id, id))
+      .returning({ id: schema.storedPasswords.id });
+    return result.length > 0;
+  }
+
+  // Security Recommendations methods
+  async getSecurityRecommendations(userId: number): Promise<SecurityRecommendation[]> {
+    return await db
+      .select()
+      .from(schema.securityRecommendations)
+      .where(eq(schema.securityRecommendations.userId, userId));
+  }
+
+  async updateSecurityRecommendation(id: number, updates: Partial<SecurityRecommendation>): Promise<SecurityRecommendation | undefined> {
+    const [updatedRecommendation] = await db
+      .update(schema.securityRecommendations)
+      .set(updates)
+      .where(eq(schema.securityRecommendations.id, id))
+      .returning();
+    return updatedRecommendation || undefined;
+  }
+
+  // Dashboard methods
+  async getUserSecuritySummary(userId: number): Promise<{
+    securityScore: number;
+    activeSessions: number;
+    weakPasswords: number;
+    recommendations: number;
+    alerts: number;
+  }> {
+    // Get user information
+    const [user] = await db
+      .select({ securityScore: schema.users.securityScore })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+
+    // Count active sessions
+    const [sessionCount] = await db
+      .select({ count: count() })
+      .from(schema.sessions)
+      .where(and(
+        eq(schema.sessions.userId, userId),
+        eq(schema.sessions.isActive, true)
+      ));
+
+    // Count weak passwords
+    const [weakPasswordCount] = await db
+      .select({ count: count() })
+      .from(schema.storedPasswords)
+      .where(and(
+        eq(schema.storedPasswords.userId, userId),
+        eq(schema.storedPasswords.strength, "weak")
+      ));
+
+    // Count pending recommendations
+    const [recommendationsCount] = await db
+      .select({ count: count() })
+      .from(schema.securityRecommendations)
+      .where(and(
+        eq(schema.securityRecommendations.userId, userId),
+        eq(schema.securityRecommendations.isCompleted, false)
+      ));
+
+    // Count unread alerts
+    const [alertsCount] = await db
+      .select({ count: count() })
+      .from(schema.securityAlerts)
+      .where(and(
+        eq(schema.securityAlerts.userId, userId),
+        eq(schema.securityAlerts.isRead, false)
+      ));
+
+    return {
+      securityScore: user?.securityScore || 0,
+      activeSessions: sessionCount?.count || 0,
+      weakPasswords: weakPasswordCount?.count || 0,
+      recommendations: recommendationsCount?.count || 0,
+      alerts: alertsCount?.count || 0
+    };
+  }
+}
+
+// Use DatabaseStorage with PostgreSQL instead of MemStorage
+export const storage = new DatabaseStorage();
